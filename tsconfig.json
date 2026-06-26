@@ -3,7 +3,7 @@
         "./src/**/*"
     ],
     "compilerOptions": {
-        "allowJs": true
+        "allowJs": true,
         "strict": true,
         "esModuleInterop": true,
         "lib": [
