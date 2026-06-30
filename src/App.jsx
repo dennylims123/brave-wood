@@ -170,6 +170,17 @@ function scoreField(row, fieldKey) {
   const raw = (row[fieldKey] || "").trim();
   if (!raw) return null;
 
+  // Q41 is phrased as "were there social problems in the last year" — this
+  // is an inverted question where "Tidak" (no problems) is the GOOD answer
+  // and "Ya" (problems occurred) is the BAD answer, unlike every other
+  // Ya/Tidak field in the form.
+  if (fieldKey === "q41_permasalahanSosial") {
+    const lower = raw.toLowerCase();
+    if (lower === "tidak") return 1;
+    if (lower === "ya") return 0;
+    return 0.5;
+  }
+
   if (MULTI_VALUE_FIELDS.has(fieldKey)) {
     const maxOptions =
       { q24_cakupanLingkungan: 5, q40_cakupanSosial: 9, q51_cakupanNDPE: 4 }[
@@ -207,11 +218,53 @@ function scoreSection(row, key) {
     return filled === 0 ? null : filled / infoFields.length;
   }
   if (key === "cert") {
-    const c = (row.q53_sertifikasi || "").trim();
-    if (!c) return null;
-    if (c.toLowerCase().includes("belum")) return 0;
-    const count = c.split(";").filter((s) => s.trim()).length;
-    return Math.min(1, count / 3);
+    const certs = getCertList(row);
+    const rawAnswer = (row.q53_sertifikasi || "").trim();
+    if (certs.length === 0) return rawAnswer ? 0 : null; // explicit "Belum ada" vs not answered yet
+    return Math.min(1, certs.length / 3);
+  }
+  if (key === "enviro") {
+    const kebunInti = (row.q25_kebunInti || "").trim().toLowerCase();
+    const noKebunInti = kebunInti === "tidak";
+    // Q25 dependents (Q26, Q28, Q30-33) only apply if the supplier actually
+    // has Kebun Inti. If they answered "Tidak", those fields are N/A — they
+    // shouldn't count as missing/unanswered, and Q25 itself isn't a
+    // negative signal (not having Kebun Inti isn't a compliance failure).
+    const dependentFields = [
+      "q26_tahunTanam",
+      "q28_penilaianHCVHCS",
+      "q30_sistemPemantauan",
+      "q31_soilAssessment",
+      "q32_lahanGambut",
+      "q33_bmpGambut",
+    ];
+    const fields = noKebunInti
+      ? SECTION_FIELDS.enviro.filter(
+          (f) => f !== "q25_kebunInti" && !dependentFields.includes(f)
+        )
+      : SECTION_FIELDS.enviro;
+    const scores = fields
+      .map((f) => scoreField(row, f))
+      .filter((s) => s !== null);
+    if (scores.length === 0) return null;
+    return scores.reduce((a, b) => a + b, 0) / scores.length;
+  }
+  if (key === "trace") {
+    const hasSystem = (row.q44_sistemTraceability || "")
+      .trim()
+      .toLowerCase();
+    const noSystem = hasSystem === "tidak";
+    // Q45 (level of traceability) is only asked if Q44 confirms a system
+    // exists. If Q44 = "Tidak", Q45 is skipped on the real form and should
+    // not be treated as a missing/unanswered question.
+    const fields = noSystem
+      ? SECTION_FIELDS.trace.filter((f) => f !== "q45_tingkatTraceability")
+      : SECTION_FIELDS.trace;
+    const scores = fields
+      .map((f) => scoreField(row, f))
+      .filter((s) => s !== null);
+    if (scores.length === 0) return null;
+    return scores.reduce((a, b) => a + b, 0) / scores.length;
   }
   const fields = SECTION_FIELDS[key];
   const scores = fields
@@ -249,6 +302,21 @@ function parseProgress(row) {
   const m = (row.completedSections || "").match(/(\d+)\s*\/\s*(\d+)/);
   if (!m) return { done: 0, total: 8 };
   return { done: parseInt(m[1], 10), total: parseInt(m[2], 10) };
+}
+
+// Combines the standard certification checklist (q53_sertifikasi, e.g.
+// "ISPO; RSPO") with any free-text "Yang lain : ...." answer stored
+// separately in q53_sertifikasiLainnya. Without this, a supplier who only
+// answered "Yang lain" has their typed-in certification silently dropped.
+function getCertList(row) {
+  const standard = (row.q53_sertifikasi || "")
+    .trim()
+    .split(";")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .filter((s) => !s.toLowerCase().includes("belum"));
+  const other = (row.q53_sertifikasiLainnya || "").trim();
+  return other ? [...standard, other] : standard;
 }
 
 // =========================================================================
@@ -817,7 +885,7 @@ function SupplierDetail({ supplier, onBack }) {
         const isOpen = openSection === sec.key;
         const Icon = sec.icon;
         if (sec.key === "cert") {
-          const c = (raw.q53_sertifikasi || "").trim();
+          const certs = getCertList(raw);
           return (
             <div
               key={sec.key}
@@ -863,23 +931,19 @@ function SupplierDetail({ supplier, onBack }) {
               </button>
               {isOpen && (
                 <div style={{ padding: "0 16px 14px" }}>
-                  {c ? (
-                    c
-                      .split(";")
-                      .map((s) => s.trim())
-                      .filter(Boolean)
-                      .map((cert) => (
-                        <span
-                          key={cert}
-                          style={{
-                            marginRight: 6,
-                            display: "inline-block",
-                            marginBottom: 6,
-                          }}
-                        >
-                          <Pill tone="good">{cert}</Pill>
-                        </span>
-                      ))
+                  {certs.length > 0 ? (
+                    certs.map((cert) => (
+                      <span
+                        key={cert}
+                        style={{
+                          marginRight: 6,
+                          display: "inline-block",
+                          marginBottom: 6,
+                        }}
+                      >
+                        <Pill tone="good">{cert}</Pill>
+                      </span>
+                    ))
                   ) : (
                     <Pill tone="neutral">Belum dijawab</Pill>
                   )}
