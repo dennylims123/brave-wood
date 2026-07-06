@@ -324,23 +324,23 @@ function getCertList(row) {
 // =========================================================================
 
 const T = {
-  pg: "#1a472a",
-  pg2: "#2d6a4f",
-  pg3: "#40916c",
-  pg5: "#b7e4c7",
-  pg6: "#d8f3dc",
-  gd: "#b8860b",
-  gd3: "#f0e6c8",
-  gd4: "#faf6ec",
-  bg: "#f4f3ee",
+  pg: "#083838",   // dark teal — primary brand color (Permata hero overlay)
+  pg2: "#004c55",  // section-title teal — matches Permata --theme-section-title
+  pg3: "#1b7054",  // medium green — matches Permata --theme-gradient-mid
+  pg5: "#cfe9d3",  // soft mint tint (derived from --theme-card-bg #f0fdf4)
+  pg6: "#f0fdf4",  // card surface — matches Permata --theme-card-bg
+  gd: "#40a338",   // accent green — matches Permata --theme-eyebrow / --theme-accent
+  gd3: "#e8f8e8",  // secondary surface — matches Permata --theme-btn-secondary-bg
+  gd4: "#f0fdf4",  // light accent surface
+  bg: "#f4faf5",   // page background (warm mint, derived from card-bg)
   card: "#ffffff",
-  fg: "#1a1a1a",
-  fg2: "#4a4a4a",
-  fg3: "#777777",
-  bd: "#e2dfd6",
+  fg: "#374151",   // body text — matches Permata --theme-body-text
+  fg2: "#4b6c66",  // subtitle — matches Permata --theme-section-subtitle
+  fg3: "#6b7c78",  // muted text ( Permata gray-green)
+  bd: "#d8e3df",   // soft border
   er: "#c0392b",
-  wr: "#e6a817",
-  ok: "#2d6a4f",
+  wr: "#d97706",   // deeper amber — harmonizes with Permata teal while staying a clear "warning" semantic
+  ok: "#1b7054",   // success — matches Permata --theme-gradient-mid
 };
 const styleVars = {
   "--pg": T.pg,
@@ -1379,39 +1379,87 @@ export default function App() {
         rel="stylesheet"
       />
 
-      <div style={{ marginBottom: 20 }}>
+      <div
+        style={{
+          marginBottom: 20,
+          background: "linear-gradient(135deg, #083838 0%, #004c55 100%)",
+          borderRadius: 14,
+          padding: "20px 24px",
+          color: "#ffffff",
+          display: "flex",
+          alignItems: "center",
+          gap: 18,
+          flexWrap: "wrap",
+          boxShadow: "0 2px 12px rgba(8, 56, 56, 0.18)",
+        }}
+      >
         <div
           style={{
-            display: "inline-flex",
+            background: "#ffffff",
+            borderRadius: 10,
+            padding: "9px 14px",
+            display: "flex",
             alignItems: "center",
-            gap: 6,
-            padding: "4px 11px",
-            borderRadius: 20,
-            background: T.gd4,
-            color: T.gd,
-            fontSize: 10.5,
-            fontWeight: 700,
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-            marginBottom: 8,
-            border: `1px solid ${T.gd3}`,
+            justifyContent: "center",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.18)",
+            flexShrink: 0,
           }}
         >
-          <ShieldCheck size={11} /> NDPE 3.0-Permata
+          <img
+            src="brand/logoPermata.svg"
+            alt="Permata Group"
+            style={{ height: 32, width: "auto", display: "block" }}
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+              const fb = document.createElement("span");
+              fb.textContent = "PERMATA GROUP";
+              fb.style.cssText =
+                "font-family:'Playfair Display',serif;font-size:14px;font-weight:800;color:#004c55;letter-spacing:0.02em";
+              e.currentTarget.parentElement.appendChild(fb);
+            }}
+          />
         </div>
-        <h1
-          style={{
-            fontFamily: "'Playfair Display', serif",
-            fontSize: 26,
-            fontWeight: 800,
-            color: T.pg,
-            margin: 0,
-          }}
-        >
-          Dasbor Kepatuhan NDPE
-        </h1>
-        <div style={{ fontSize: 12.5, color: T.fg3, marginTop: 4 }}>
-          Permata Group · Live dari Google Sheets
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "4px 11px",
+              borderRadius: 20,
+              background: "rgba(64, 163, 56, 0.18)",
+              color: "#7ed98a",
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: "0.05em",
+              textTransform: "uppercase",
+              marginBottom: 6,
+              border: "1px solid rgba(64, 163, 56, 0.35)",
+            }}
+          >
+            <ShieldCheck size={11} /> NDPE 3.0-Permata
+          </div>
+          <h1
+            style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: 24,
+              fontWeight: 800,
+              color: "#ffffff",
+              margin: 0,
+              lineHeight: 1.15,
+            }}
+          >
+            Dasbor Kepatuhan NDPE
+          </h1>
+          <div
+            style={{
+              fontSize: 12.5,
+              color: "rgba(255, 255, 255, 0.82)",
+              marginTop: 4,
+            }}
+          >
+            Permata Group · Live dari Google Sheets
+          </div>
         </div>
       </div>
 
