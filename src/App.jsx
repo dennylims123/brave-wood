@@ -324,23 +324,23 @@ function getCertList(row) {
 // =========================================================================
 
 const T = {
-  pg: "#083838",   // dark teal — primary brand color (Permata hero overlay)
-  pg2: "#004c55",  // section-title teal — matches Permata --theme-section-title
-  pg3: "#1b7054",  // medium green — matches Permata --theme-gradient-mid
-  pg5: "#cfe9d3",  // soft mint tint (derived from --theme-card-bg #f0fdf4)
-  pg6: "#f0fdf4",  // card surface — matches Permata --theme-card-bg
-  gd: "#40a338",   // accent green — matches Permata --theme-eyebrow / --theme-accent
-  gd3: "#e8f8e8",  // secondary surface — matches Permata --theme-btn-secondary-bg
-  gd4: "#f0fdf4",  // light accent surface
-  bg: "#f4faf5",   // page background (warm mint, derived from card-bg)
+  pg: "#1a472a",
+  pg2: "#2d6a4f",
+  pg3: "#40916c",
+  pg5: "#b7e4c7",
+  pg6: "#d8f3dc",
+  gd: "#b8860b",
+  gd3: "#f0e6c8",
+  gd4: "#faf6ec",
+  bg: "#f4f3ee",
   card: "#ffffff",
-  fg: "#374151",   // body text — matches Permata --theme-body-text
-  fg2: "#4b6c66",  // subtitle — matches Permata --theme-section-subtitle
-  fg3: "#6b7c78",  // muted text ( Permata gray-green)
-  bd: "#d8e3df",   // soft border
+  fg: "#1a1a1a",
+  fg2: "#4a4a4a",
+  fg3: "#777777",
+  bd: "#e2dfd6",
   er: "#c0392b",
-  wr: "#d97706",   // deeper amber — harmonizes with Permata teal while staying a clear "warning" semantic
-  ok: "#1b7054",   // success — matches Permata --theme-gradient-mid
+  wr: "#e6a817",
+  ok: "#2d6a4f",
 };
 const styleVars = {
   "--pg": T.pg,
@@ -545,11 +545,47 @@ function SectionBar({ section, score }) {
   );
 }
 
-function FieldRow({ row, fieldKey }) {
+function FieldRow({ row, fieldKey, naStatus = false }) {
   const label = FIELD_LABELS[fieldKey] || fieldKey;
   const raw = (row[fieldKey] || "").trim();
   const score = scoreField(row, fieldKey);
   const ev = hasEvidence(row, fieldKey);
+
+  // N/A — field dikondisikan tidak relevan (misal Q26-Q33 saat Q25=Tidak)
+  // Ditampilkan berbeda dari "Belum dijawab" agar tidak membingungkan
+  if (naStatus) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "8px 0",
+          borderBottom: `1px solid ${T.bd}`,
+          opacity: 0.5,
+        }}
+      >
+        <span style={{ fontSize: 12.5, color: T.fg3, fontStyle: "italic" }}>
+          {label}
+        </span>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: T.fg3,
+            background: T.bg,
+            border: `1px solid ${T.bd}`,
+            borderRadius: 20,
+            padding: "3px 10px",
+            letterSpacing: "0.04em",
+          }}
+        >
+          N/A
+        </span>
+      </div>
+    );
+  }
+
   if (!raw) {
     return (
       <div
@@ -1001,9 +1037,22 @@ function SupplierDetail({ supplier, onBack }) {
             </button>
             {isOpen && (
               <div style={{ padding: "0 16px 8px" }}>
-                {fields.map((f) => (
-                  <FieldRow key={f} row={raw} fieldKey={f} />
-                ))}
+                {fields.map((f) => {
+                  // Q26-Q33 adalah N/A jika Q25 Kebun Inti dijawab "Tidak"
+                  const enviroNaFields = [
+                    "q26_tahunTanam",
+                    "q28_penilaianHCVHCS",
+                    "q30_sistemPemantauan",
+                    "q31_soilAssessment",
+                    "q32_lahanGambut",
+                    "q33_bmpGambut",
+                  ];
+                  const isNA =
+                    sec.key === "enviro" &&
+                    enviroNaFields.includes(f) &&
+                    (raw.q25_kebunInti || "").trim().toLowerCase() === "tidak";
+                  return <FieldRow key={f} row={raw} fieldKey={f} naStatus={isNA} />;
+                })}
               </div>
             )}
           </div>
@@ -1379,87 +1428,39 @@ export default function App() {
         rel="stylesheet"
       />
 
-      <div
-        style={{
-          marginBottom: 20,
-          background: "linear-gradient(135deg, #083838 0%, #004c55 100%)",
-          borderRadius: 14,
-          padding: "20px 24px",
-          color: "#ffffff",
-          display: "flex",
-          alignItems: "center",
-          gap: 18,
-          flexWrap: "wrap",
-          boxShadow: "0 2px 12px rgba(8, 56, 56, 0.18)",
-        }}
-      >
+      <div style={{ marginBottom: 20 }}>
         <div
           style={{
-            background: "#ffffff",
-            borderRadius: 10,
-            padding: "9px 14px",
-            display: "flex",
+            display: "inline-flex",
             alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.18)",
-            flexShrink: 0,
+            gap: 6,
+            padding: "4px 11px",
+            borderRadius: 20,
+            background: T.gd4,
+            color: T.gd,
+            fontSize: 10.5,
+            fontWeight: 700,
+            letterSpacing: "0.05em",
+            textTransform: "uppercase",
+            marginBottom: 8,
+            border: `1px solid ${T.gd3}`,
           }}
         >
-          <img
-            src="brand/logoPermata.svg"
-            alt="Permata Group"
-            style={{ height: 32, width: "auto", display: "block" }}
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-              const fb = document.createElement("span");
-              fb.textContent = "PERMATA GROUP";
-              fb.style.cssText =
-                "font-family:'Playfair Display',serif;font-size:14px;font-weight:800;color:#004c55;letter-spacing:0.02em";
-              e.currentTarget.parentElement.appendChild(fb);
-            }}
-          />
+          <ShieldCheck size={11} /> NDPE 3.0-Permata
         </div>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "4px 11px",
-              borderRadius: 20,
-              background: "rgba(64, 163, 56, 0.18)",
-              color: "#7ed98a",
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.05em",
-              textTransform: "uppercase",
-              marginBottom: 6,
-              border: "1px solid rgba(64, 163, 56, 0.35)",
-            }}
-          >
-            <ShieldCheck size={11} /> NDPE 3.0-Permata
-          </div>
-          <h1
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: 24,
-              fontWeight: 800,
-              color: "#ffffff",
-              margin: 0,
-              lineHeight: 1.15,
-            }}
-          >
-            Dasbor Kepatuhan NDPE
-          </h1>
-          <div
-            style={{
-              fontSize: 12.5,
-              color: "rgba(255, 255, 255, 0.82)",
-              marginTop: 4,
-            }}
-          >
-            Permata Group · Live dari Google Sheets
-          </div>
+        <h1
+          style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: 26,
+            fontWeight: 800,
+            color: T.pg,
+            margin: 0,
+          }}
+        >
+          Dasbor Kepatuhan NDPE
+        </h1>
+        <div style={{ fontSize: 12.5, color: T.fg3, marginTop: 4 }}>
+          Permata Group · Live dari Google Sheets
         </div>
       </div>
 
